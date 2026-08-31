@@ -134,7 +134,7 @@ function PlayerContent() {
       
       {/* Handles browser autoplay policy for audio-only streams */}
       <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
-        <StartAudio label="Click here to allow Audio" />
+        <StartAudio label="Connect" className="btn-primary" />
       </div>
     </div>
   );
