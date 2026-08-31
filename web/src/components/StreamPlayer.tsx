@@ -4,13 +4,12 @@ import { useState } from 'react';
 import { 
   LiveKitRoom, 
   VideoTrack, 
-  AudioTrack,
   useTracks,
   useParticipants,
   RoomAudioRenderer
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
-import { Users, Volume2, VolumeX, Maximize, Activity } from 'lucide-react';
+import { Users, Volume2, VolumeX, Activity, Mic } from 'lucide-react';
 import './StreamPlayer.css';
 
 interface Props {
@@ -37,14 +36,19 @@ function PlayerContent() {
   const [showStats, setShowStats] = useState(false);
   
   const participants = useParticipants();
-  // We only care about screen share tracks
-  const tracks = useTracks([Track.Source.ScreenShare, Track.Source.ScreenShareAudio]);
+  
+  // Track screen and mic
+  const tracks = useTracks([Track.Source.ScreenShare, Track.Source.Microphone, Track.Source.ScreenShareAudio]);
 
   const screenVideoTrack = tracks.find((t) => t.source === Track.Source.ScreenShare);
+  const micAudioTrack = tracks.find((t) => t.source === Track.Source.Microphone);
   
   // Subtract 1 for the streamer if they are in the room
   const viewerCount = Math.max(0, participants.length - 1);
-  const isStreamLive = !!screenVideoTrack;
+  
+  const hasVideo = !!screenVideoTrack;
+  const hasAudio = !!micAudioTrack || tracks.some(t => t.source === Track.Source.ScreenShareAudio);
+  const isStreamLive = hasVideo || hasAudio;
 
   const toggleMute = () => setIsMuted(!isMuted);
 
@@ -52,8 +56,14 @@ function PlayerContent() {
     <div className="stream-layout">
       <div className="video-section">
         <div className="video-wrapper">
-          {isStreamLive ? (
+          {hasVideo ? (
             <VideoTrack trackRef={screenVideoTrack} className="video-element" />
+          ) : isStreamLive && hasAudio ? (
+            <div className="offline-placeholder">
+              <Mic size={48} color="var(--primary)" style={{ opacity: 0.8, marginBottom: '1rem' }} />
+              <h2>Voice Broadcast</h2>
+              <p>The streamer is broadcasting audio only.</p>
+            </div>
           ) : (
             <div className="offline-placeholder">
               <Activity size={48} color="var(--primary)" style={{ opacity: 0.5, marginBottom: '1rem' }} />
@@ -81,6 +91,7 @@ function PlayerContent() {
                 className="volume-slider"
               />
             </div>
+            
             <div className="controls-right">
               <button onClick={() => setShowStats(!showStats)} className="control-btn text-btn">
                 Stats
@@ -95,11 +106,9 @@ function PlayerContent() {
           {showStats && isStreamLive && (
              <div className="stats-overlay glass-panel">
                <h4>Stream Stats</h4>
-               <p>Resolution: {screenVideoTrack.publication.dimensions?.width}x{screenVideoTrack.publication.dimensions?.height}</p>
-               <p>Simulcast: Enabled (Auto-quality)</p>
-               <p>Codec: VP8 / H264</p>
-               {/* Advanced stats like Jitter/Packet Loss require polling getRTCStats() which is a bit heavy for the UI thread,
-                   but LiveKit abstracts this automatically to ensure smooth playback. */}
+               {hasVideo && <p>Resolution: {screenVideoTrack?.publication.dimensions?.width}x{screenVideoTrack?.publication.dimensions?.height}</p>}
+               <p>Video: {hasVideo ? 'Active' : 'Inactive'}</p>
+               <p>Audio: {hasAudio ? 'Active' : 'Inactive'}</p>
              </div>
           )}
         </div>
@@ -119,7 +128,7 @@ function PlayerContent() {
         </div>
       </div>
       
-      {/* Renders audio if screen audio is shared */}
+      {/* Renders audio if screen audio or mic is shared */}
       <RoomAudioRenderer volume={isMuted ? 0 : volume} />
     </div>
   );

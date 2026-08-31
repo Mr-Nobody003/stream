@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LiveKitRoom, 
   useLocalParticipant, 
   useParticipants,
-  useConnectionState
+  useConnectionState,
+  useRoomContext
 } from '@livekit/components-react';
 import { ConnectionState } from 'livekit-client';
-import { MonitorUp, MonitorOff, Users, Activity, LogOut } from 'lucide-react';
+import { MonitorUp, MonitorOff, Mic, Users, Activity, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import './StreamerDashboard.css';
 
@@ -51,26 +52,64 @@ function DashboardControls() {
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
   const connectionState = useConnectionState();
-  const [isSharing, setIsSharing] = useState(false);
+  const room = useRoomContext();
   
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [mode, setMode] = useState<'screen' | 'voice' | 'both'>('both');
+  
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedMic, setSelectedMic] = useState<string>('');
+
+  useEffect(() => {
+    // Request permission to get actual device labels
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      navigator.mediaDevices.enumerateDevices().then(devs => {
+        const audioInput = devs.filter(d => d.kind === 'audioinput');
+        setDevices(audioInput);
+        if (audioInput.length > 0) setSelectedMic(audioInput[0].deviceId);
+      });
+      stream.getTracks().forEach(track => track.stop());
+    }).catch(e => console.error('Mic permission denied', e));
+  }, []);
+
   // Subtract 1 because the streamer themselves is a participant
   const viewerCount = Math.max(0, participants.length - 1);
 
-  const toggleScreenShare = async () => {
+  const toggleBroadcast = async () => {
     if (!localParticipant) return;
     
     try {
-      if (isSharing) {
+      if (isBroadcasting) {
         await localParticipant.setScreenShareEnabled(false);
-        setIsSharing(false);
+        await localParticipant.setMicrophoneEnabled(false);
+        setIsBroadcasting(false);
       } else {
-        // We set screen share audio to true so viewers can hear the PC audio if supported by browser
-        await localParticipant.setScreenShareEnabled(true, { audio: true });
-        setIsSharing(true);
+        // Start broadcast
+        if (mode === 'screen' || mode === 'both') {
+          // If both, we don't capture system audio to avoid double voice echo, just the mic
+          await localParticipant.setScreenShareEnabled(true, { audio: mode === 'screen' });
+        }
+        
+        if (mode === 'voice' || mode === 'both') {
+          if (selectedMic) {
+            await room.switchActiveDevice('audioinput', selectedMic);
+          }
+          await localParticipant.setMicrophoneEnabled(true);
+        }
+        
+        setIsBroadcasting(true);
       }
     } catch (e) {
-      console.error('Failed to toggle screen share', e);
-      setIsSharing(false);
+      console.error('Failed to toggle broadcast', e);
+      setIsBroadcasting(false);
+    }
+  };
+
+  const handleMicChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const deviceId = e.target.value;
+    setSelectedMic(deviceId);
+    if (isBroadcasting && (mode === 'voice' || mode === 'both')) {
+      await room.switchActiveDevice('audioinput', deviceId);
     }
   };
 
@@ -100,19 +139,52 @@ function DashboardControls() {
 
       <div className="premium-card control-card">
         <h3>Broadcast Controls</h3>
-        <p>Start sharing your screen to begin the broadcast. Your viewers will see it instantly with sub-second latency.</p>
+        <p>Configure your broadcast settings before going live.</p>
         
-        <button 
-          onClick={toggleScreenShare} 
-          className={isSharing ? 'btn-danger' : 'btn-primary'}
-          style={{ marginTop: '1.5rem', width: '100%', fontSize: '1.1rem', padding: '1rem' }}
-        >
-          {isSharing ? (
-            <><MonitorOff size={24} /> Stop Broadcast</>
-          ) : (
-            <><MonitorUp size={24} /> Start Screen Share</>
-          )}
-        </button>
+        <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
+          
+          <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '600px' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left' }}>
+              <label style={{ fontSize: '0.9rem', color: '#a1a1aa' }}>Broadcast Mode</label>
+              <select 
+                value={mode} 
+                onChange={(e) => setMode(e.target.value as any)}
+                className="input-field"
+                disabled={isBroadcasting}
+              >
+                <option value="screen">Screen Only</option>
+                <option value="voice">Voice Only</option>
+                <option value="both">Screen & Voice</option>
+              </select>
+            </div>
+
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left' }}>
+              <label style={{ fontSize: '0.9rem', color: '#a1a1aa' }}>Microphone</label>
+              <select 
+                value={selectedMic} 
+                onChange={handleMicChange}
+                className="input-field"
+                disabled={mode === 'screen'}
+              >
+                {devices.map(d => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.label || `Microphone ${d.deviceId}`}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <button 
+            onClick={toggleBroadcast} 
+            className={isBroadcasting ? 'btn-danger' : 'btn-primary'}
+            style={{ width: '100%', maxWidth: '600px', fontSize: '1.1rem', padding: '1rem', marginTop: '1rem' }}
+          >
+            {isBroadcasting ? (
+              <><MonitorOff size={24} /> Stop Broadcast</>
+            ) : (
+              <><MonitorUp size={24} /> Start Broadcast</>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
