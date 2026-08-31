@@ -6,8 +6,7 @@ import {
   VideoTrack, 
   useTracks,
   useParticipants,
-  RoomAudioRenderer,
-  StartAudio
+  RoomAudioRenderer
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { Users, Volume2, VolumeX, Activity, Mic } from 'lucide-react';
@@ -33,7 +32,7 @@ export default function StreamPlayer({ token }: Props) {
 
 function PlayerContent() {
   const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [showStats, setShowStats] = useState(false);
   
   const participants = useParticipants();
@@ -123,19 +122,20 @@ function PlayerContent() {
               <Users size={16} /> {viewerCount}
             </div>
           </div>
-          <div className="chat-placeholder">
+          <div className="chat-placeholder" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <p className="text-muted">Chat is disabled for this broadcast.</p>
+            
+            {isMuted && (
+              <button onClick={() => setIsMuted(false)} className="btn-primary">
+                Connect Audio
+              </button>
+            )}
           </div>
         </div>
       </div>
       
       {/* Renders audio if screen audio or mic is shared */}
       <RoomAudioRenderer volume={isMuted ? 0 : volume} />
-      
-      {/* Handles browser autoplay policy for audio-only streams */}
-      <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
-        <StartAudio label="Connect" className="btn-primary" />
-      </div>
     </div>
   );
 }
