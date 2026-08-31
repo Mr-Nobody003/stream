@@ -6,7 +6,8 @@ import {
   VideoTrack, 
   useTracks,
   useParticipants,
-  RoomAudioRenderer
+  RoomAudioRenderer,
+  StartAudio
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { Users, Volume2, VolumeX, Activity, Mic } from 'lucide-react';
@@ -130,6 +131,11 @@ function PlayerContent() {
       
       {/* Renders audio if screen audio or mic is shared */}
       <RoomAudioRenderer volume={isMuted ? 0 : volume} />
+      
+      {/* Handles browser autoplay policy for audio-only streams */}
+      <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
+        <StartAudio label="Click here to allow Audio" />
+      </div>
     </div>
   );
 }
