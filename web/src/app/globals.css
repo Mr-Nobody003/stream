@@ -100,6 +100,11 @@ button {
   border-color: var(--primary);
 }
 
+.input-field option {
+  background-color: var(--surface);
+  color: var(--foreground);
+}
+
 .glass-panel {
   background: rgba(24, 24, 27, 0.6);
   backdrop-filter: blur(12px);

@@ -86,8 +86,8 @@ function DashboardControls() {
       } else {
         // Start broadcast
         if (mode === 'screen' || mode === 'both') {
-          // If both, we don't capture system audio to avoid double voice echo, just the mic
-          await localParticipant.setScreenShareEnabled(true, { audio: mode === 'screen' });
+          // Pass audio: true to always capture system/screen audio (like game sounds)
+          await localParticipant.setScreenShareEnabled(true, { audio: true });
         }
         
         if (mode === 'voice' || mode === 'both') {
