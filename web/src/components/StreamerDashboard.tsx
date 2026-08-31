@@ -96,7 +96,11 @@ function DashboardControls() {
                     : resolution === '1440' ? VideoPresets.h1440.resolution
                     : VideoPresets.h1080.resolution;
           
-          await localParticipant.setScreenShareEnabled(true, { audio: true, resolution: res });
+          await localParticipant.setScreenShareEnabled(
+            true, 
+            { audio: true, resolution: res, contentHint: 'motion' },
+            { degradationPreference: 'maintain-framerate' }
+          );
         }
         
         if (mode === 'voice' || mode === 'both') {
