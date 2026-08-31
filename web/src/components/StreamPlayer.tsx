@@ -6,7 +6,8 @@ import {
   VideoTrack, 
   useTracks,
   useParticipants,
-  RoomAudioRenderer
+  RoomAudioRenderer,
+  useRoomContext
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { Users, Volume2, VolumeX, Activity, Mic } from 'lucide-react';
@@ -36,6 +37,7 @@ function PlayerContent() {
   const [showStats, setShowStats] = useState(false);
   
   const participants = useParticipants();
+  const room = useRoomContext();
   
   // Track screen and mic
   const tracks = useTracks([Track.Source.ScreenShare, Track.Source.Microphone, Track.Source.ScreenShareAudio]);
@@ -50,7 +52,12 @@ function PlayerContent() {
   const hasAudio = !!micAudioTrack || tracks.some(t => t.source === Track.Source.ScreenShareAudio);
   const isStreamLive = hasVideo || hasAudio;
 
-  const toggleMute = () => setIsMuted(!isMuted);
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    if (isMuted) {
+      room.startAudio().catch(console.error);
+    }
+  };
 
   return (
     <div className="stream-layout">
@@ -85,8 +92,12 @@ function PlayerContent() {
                 step="0.05"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => {
-                  setVolume(parseFloat(e.target.value));
-                  if (parseFloat(e.target.value) > 0) setIsMuted(false);
+                  const val = parseFloat(e.target.value);
+                  setVolume(val);
+                  if (val > 0 && isMuted) {
+                    setIsMuted(false);
+                    room.startAudio().catch(console.error);
+                  }
                 }}
                 className="volume-slider"
               />
@@ -126,7 +137,10 @@ function PlayerContent() {
             <p className="text-muted">Chat is disabled for this broadcast.</p>
             
             {isMuted && (
-              <button onClick={() => setIsMuted(false)} className="btn-primary">
+              <button onClick={() => {
+                setIsMuted(false);
+                room.startAudio().catch(console.error);
+              }} className="btn-primary">
                 Connect Audio
               </button>
             )}
