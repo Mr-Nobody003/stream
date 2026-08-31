@@ -11,6 +11,7 @@
   "dependencies": {
     "@livekit/components-react": "^2.9.24",
     "@upstash/redis": "^1.38.3",
+    "@vercel/analytics": "^2.0.1",
     "jose": "^6.2.10",
     "livekit-client": "^2.22.1",
     "livekit-server-sdk": "^2.18.0",
