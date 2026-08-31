@@ -87,19 +87,24 @@ function DashboardControls() {
       } else {
         // Start broadcast
         if (mode === 'screen' || mode === 'both') {
-          // Pass audio: true to always capture system/screen audio (like game sounds)
-          const res = resolution === '144' ? { width: 256, height: 144, frameRate: 15 }
-                    : resolution === '240' ? { width: 426, height: 240, frameRate: 15 }
-                    : resolution === '360' ? VideoPresets.h360.resolution
+          // Use custom resolutions and high bitrates for smooth 60fps game streaming
+          const captureRes = resolution === '144' ? { width: 256, height: 144, frameRate: 15 }
+                    : resolution === '240' ? { width: 426, height: 240, frameRate: 30 }
+                    : resolution === '360' ? { width: 640, height: 360, frameRate: 30 }
                     : resolution === '480' ? { width: 854, height: 480, frameRate: 30 }
-                    : resolution === '720' ? VideoPresets.h720.resolution
-                    : resolution === '1440' ? VideoPresets.h1440.resolution
-                    : VideoPresets.h1080.resolution;
+                    : resolution === '720' ? { width: 1280, height: 720, frameRate: 60 }
+                    : resolution === '1440' ? { width: 2560, height: 1440, frameRate: 60 }
+                    : { width: 1920, height: 1080, frameRate: 60 };
+                    
+          const encoding = resolution === '720' ? { maxBitrate: 4_000_000, maxFramerate: 60 }
+                         : resolution === '1440' ? { maxBitrate: 10_000_000, maxFramerate: 60 }
+                         : resolution === '1080' ? { maxBitrate: 6_000_000, maxFramerate: 60 }
+                         : undefined;
           
           await localParticipant.setScreenShareEnabled(
             true, 
-            { audio: true, resolution: res, contentHint: 'motion' },
-            { degradationPreference: 'maintain-framerate' }
+            { audio: true, resolution: captureRes, contentHint: 'motion' },
+            { degradationPreference: 'maintain-framerate', videoEncoding: encoding }
           );
         }
         

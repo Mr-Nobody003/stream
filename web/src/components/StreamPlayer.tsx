@@ -42,16 +42,6 @@ function PlayerContent() {
   // Track screen and mic
   const tracks = useTracks([Track.Source.ScreenShare, Track.Source.Microphone, Track.Source.ScreenShareAudio]);
 
-  // Buffer the stream to eliminate stuttering at the cost of 5 seconds of latency
-  useEffect(() => {
-    tracks.forEach((trackRef) => {
-      const track = trackRef.publication?.track as RemoteTrack | undefined;
-      if (track && typeof track.setPlayoutDelay === 'function') {
-        track.setPlayoutDelay(5);
-      }
-    });
-  }, [tracks]);
-
   const screenVideoTrack = tracks.find((t) => t.source === Track.Source.ScreenShare);
   const micAudioTrack = tracks.find((t) => t.source === Track.Source.Microphone);
   
@@ -61,6 +51,18 @@ function PlayerContent() {
   const hasVideo = !!screenVideoTrack;
   const hasAudio = !!micAudioTrack || tracks.some(t => t.source === Track.Source.ScreenShareAudio);
   const isStreamLive = hasVideo || hasAudio;
+
+  // Buffer the stream to eliminate stuttering at the cost of latency.
+  // 0s delay for voice-only broadcasts, 5s delay for game streams.
+  useEffect(() => {
+    const delay = hasVideo ? 5 : 0;
+    tracks.forEach((trackRef) => {
+      const track = trackRef.publication?.track as RemoteTrack | undefined;
+      if (track && typeof track.setPlayoutDelay === 'function') {
+        track.setPlayoutDelay(delay);
+      }
+    });
+  }, [tracks, hasVideo]);
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
