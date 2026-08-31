@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LiveKitRoom, 
   VideoTrack, 
@@ -9,7 +9,7 @@ import {
   RoomAudioRenderer,
   useRoomContext
 } from '@livekit/components-react';
-import { Track } from 'livekit-client';
+import { Track, RemoteTrack } from 'livekit-client';
 import { Users, Volume2, VolumeX, Activity, Mic } from 'lucide-react';
 import './StreamPlayer.css';
 
@@ -41,6 +41,16 @@ function PlayerContent() {
   
   // Track screen and mic
   const tracks = useTracks([Track.Source.ScreenShare, Track.Source.Microphone, Track.Source.ScreenShareAudio]);
+
+  // Buffer the stream to eliminate stuttering at the cost of 5 seconds of latency
+  useEffect(() => {
+    tracks.forEach((trackRef) => {
+      const track = trackRef.publication?.track as RemoteTrack | undefined;
+      if (track && typeof track.setPlayoutDelay === 'function') {
+        track.setPlayoutDelay(5);
+      }
+    });
+  }, [tracks]);
 
   const screenVideoTrack = tracks.find((t) => t.source === Track.Source.ScreenShare);
   const micAudioTrack = tracks.find((t) => t.source === Track.Source.Microphone);
