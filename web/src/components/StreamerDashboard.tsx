@@ -8,7 +8,7 @@ import {
   useConnectionState,
   useRoomContext
 } from '@livekit/components-react';
-import { ConnectionState } from 'livekit-client';
+import { ConnectionState, VideoPresets } from 'livekit-client';
 import { MonitorUp, MonitorOff, Mic, Users, Activity, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import './StreamerDashboard.css';
@@ -56,6 +56,7 @@ function DashboardControls() {
   
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [mode, setMode] = useState<'screen' | 'voice' | 'both'>('both');
+  const [resolution, setResolution] = useState<'144' | '240' | '360' | '480' | '720' | '1080' | '1440'>('1080');
   
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedMic, setSelectedMic] = useState<string>('');
@@ -87,7 +88,15 @@ function DashboardControls() {
         // Start broadcast
         if (mode === 'screen' || mode === 'both') {
           // Pass audio: true to always capture system/screen audio (like game sounds)
-          await localParticipant.setScreenShareEnabled(true, { audio: true });
+          const res = resolution === '144' ? { width: 256, height: 144, frameRate: 15 }
+                    : resolution === '240' ? { width: 426, height: 240, frameRate: 15 }
+                    : resolution === '360' ? VideoPresets.h360.resolution
+                    : resolution === '480' ? { width: 854, height: 480, frameRate: 30 }
+                    : resolution === '720' ? VideoPresets.h720.resolution
+                    : resolution === '1440' ? VideoPresets.h1440.resolution
+                    : VideoPresets.h1080.resolution;
+          
+          await localParticipant.setScreenShareEnabled(true, { audio: true, resolution: res });
         }
         
         if (mode === 'voice' || mode === 'both') {
@@ -169,6 +178,24 @@ function DashboardControls() {
                 {devices.map(d => (
                   <option key={d.deviceId} value={d.deviceId}>{d.label || `Microphone ${d.deviceId}`}</option>
                 ))}
+              </select>
+            </div>
+
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left' }}>
+              <label style={{ fontSize: '0.9rem', color: '#a1a1aa' }}>Max Resolution</label>
+              <select 
+                value={resolution} 
+                onChange={(e) => setResolution(e.target.value as any)}
+                className="input-field"
+                disabled={isBroadcasting || mode === 'voice'}
+              >
+                <option value="144">144p (Extremely Low)</option>
+                <option value="240">240p (Very Low)</option>
+                <option value="360">360p (Low)</option>
+                <option value="480">480p (Standard)</option>
+                <option value="720">720p (HD / Performance)</option>
+                <option value="1080">1080p (Full HD)</option>
+                <option value="1440">1440p (High Quality)</option>
               </select>
             </div>
           </div>
