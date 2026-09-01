@@ -90,19 +90,19 @@ function DashboardControls() {
           // Use custom resolutions and high bitrates for smooth 60fps game streaming
           const captureRes = resolution === '144' ? { width: 256, height: 144, frameRate: 60 }
                     : resolution === '240' ? { width: 426, height: 240, frameRate: 60 }
-                    : resolution === '360' ? { width: 640, height: 360, frameRate: 60 }
-                    : resolution === '480' ? { width: 854, height: 480, frameRate: 60 }
-                    : resolution === '720' ? { width: 1280, height: 720, frameRate: 60 }
-                    : resolution === '1440' ? { width: 2560, height: 1440, frameRate: 60 }
-                    : { width: 1920, height: 1080, frameRate: 60 };
+                    : resolution === '360' ? { width: 640, height: 360, frameRate: 120 }
+                    : resolution === '480' ? { width: 854, height: 480, frameRate: 120 }
+                    : resolution === '720' ? { width: 1280, height: 720, frameRate: 120 }
+                    : resolution === '1440' ? { width: 2560, height: 1440, frameRate: 120 }
+                    : { width: 1920, height: 1080, frameRate: 120 };
                     
           const encoding = resolution === '144' ? { maxBitrate: 200_000, maxFramerate: 60 }
                          : resolution === '240' ? { maxBitrate: 400_000, maxFramerate: 60 }
-                         : resolution === '360' ? { maxBitrate: 800_000, maxFramerate: 60 }
-                         : resolution === '480' ? { maxBitrate: 1_500_000, maxFramerate: 60 }
-                         : resolution === '720' ? { maxBitrate: 4_000_000, maxFramerate: 60 }
-                         : resolution === '1440' ? { maxBitrate: 10_000_000, maxFramerate: 60 }
-                         : resolution === '1080' ? { maxBitrate: 6_000_000, maxFramerate: 60 }
+                         : resolution === '360' ? { maxBitrate: 800_000, maxFramerate: 120 }
+                         : resolution === '480' ? { maxBitrate: 1_500_000, maxFramerate: 120 }
+                         : resolution === '720' ? { maxBitrate: 4_000_000, maxFramerate: 120 }
+                         : resolution === '1440' ? { maxBitrate: 10_000_000, maxFramerate: 120 }
+                         : resolution === '1080' ? { maxBitrate: 12_000_000, maxFramerate: 120 }
                          : undefined;
           
           await localParticipant.setScreenShareEnabled(
