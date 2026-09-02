@@ -108,7 +108,14 @@ function DashboardControls() {
           
           await localParticipant.setScreenShareEnabled(
             true, 
-            { audio: true, resolution: captureRes, contentHint: 'motion' },
+            { 
+              audio: true, 
+              resolution: captureRes, 
+              contentHint: 'motion',
+              // Bypass types to pass native getDisplayMedia constraints
+              // 'cursor: never' prevents Windows from hiding the hardware cursor
+              video: { displaySurface: 'monitor', cursor: 'never' } as any
+            },
             { degradationPreference: 'maintain-framerate', videoEncoding: encoding }
           );
         }
